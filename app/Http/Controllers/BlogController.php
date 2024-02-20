@@ -7,11 +7,23 @@ use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class BlogController extends Controller
 {
     public function index(): View
     {
+
+        Validator::make(
+            [
+                'title' => '',
+            ],
+            [
+                // 'title' => 'required|min:8|max:15'
+            ]
+        );
+
         $post = Post::paginate(25);
 
         return view('blog.index', [
@@ -19,9 +31,8 @@ class BlogController extends Controller
         ]);
     }
 
-    public function show(string $slug, string $id): RedirectResponse | View
+    public function show(string $slug, Post $post): RedirectResponse | View
     {
-        $post = Post::findOrFail($id);
         // si le slug en requête ne correspond pas mais que l'id est bon
         if ($post->slug !== $slug) {
             // on redirige vers l'affichage de l'article/ on indique que le slug est celui en bdd, idem pour l'id
@@ -32,7 +43,25 @@ class BlogController extends Controller
             'post' => $post
         ]);
     }
+
+    public function store(Request $request)
+    {
+        $post = Post::create([
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+            'slug' => Str::slug($request->input('title'))
+        ]);
+
+        return redirect()->route('blog.show', ['slug' => $post->slug, 'post' => $post->id])->with('success', 'L\'article a bien été suavegardé');
+    }
+
+
+    public function create()
+    {
+        return view('blog.create');
+    }
 }
+
 
 // **** pour la suppression
 // $post = Post::find(1);
